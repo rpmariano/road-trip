@@ -4,12 +4,12 @@ import gpxpy
 import requests
 from streamlit_folium import st_folium
 
-# Os dados GPX estão embutidos para execução standalone
+# Layout panorâmico para melhor visualização
+st.set_page_config(page_title="Rotas Xisto", layout="wide")
+
 gpx_data = """<?xml version="1.0" ?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Gemini" version="1.1">
-  <metadata>
-    <name>Passeio de Mota - Aldeias de Xisto</name>
-  </metadata>
+  <metadata><name>Passeio de Mota - Aldeias de Xisto</name></metadata>
   <rte>
     <name>Dia 1 - Atlântico e Pinhal</name>
     <rtept lat="38.6979" lon="-9.4215"><name>Cascais</name></rtept>
@@ -45,68 +45,102 @@ gpx_data = """<?xml version="1.0" ?>
   </rte>
 </gpx>"""
 
-# Configuração da página Streamlit
-st.set_page_config(page_title="Rotas Xisto", layout="wide")
-st.title("Visualizador de Rotas de Mota")
-st.markdown("O mapa com as tuas etapas diárias. Insere a chave de API na barra lateral para veres a meteorologia nas paragens.")
+# Dados detalhados de cada etapa para a UI
+info_dias = {
+    "Dia 1 - Atlântico e Pinhal": {
+        "km": "165 km", "tempo": "3h 45m",
+        "pontos": "Cascais » Ericeira » Foz do Arelho » S. Pedro de Moel » Leiria",
+        "vistas": "Encontro da Lagoa de Óbidos com o mar (Foz do Arelho); Farol do Penedo da Saudade (S. Pedro de Moel).",
+        "comer": "Tasca do Zé Mário ou Ao Largo (Naco de vitela/bife c/ cogumelos).",
+        "dormir": "Hostel Leiria ou Hotel Ibis Leiria."
+    },
+    "Dia 2 - Transição para a Serra": {
+        "km": "92 km", "tempo": "2h 15m",
+        "pontos": "Leiria » Penela » Talasnal » Lousã",
+        "vistas": "Castelo de Penela e quelhas a pé no Talasnal.",
+        "comer": "O Burgo (Vitela assada no forno a lenha).",
+        "dormir": "Palácio da Lousã Boutique Hotel ou HI Hostel Lousã."
+    },
+    "Dia 3 - O Coração do Xisto": {
+        "km": "80 km", "tempo": "2h 30m",
+        "pontos": "Lousã » Góis » Piódão",
+        "vistas": "Margens do rio Ceira (Góis); Anfiteatro e casas azuis do Piódão.",
+        "comer": "O Fontinha (Cabrito assado).",
+        "dormir": "Inatel Piódão ou Casa da Padaria."
+    },
+    "Dia 4 - Cascatas e Património": {
+        "km": "140 km", "tempo": "2h 45m",
+        "pontos": "Piódão » Fraga da Pena » Batalha",
+        "vistas": "Cascata da Fraga da Pena (Mata da Margaraça); Mosteiro da Batalha.",
+        "comer": "Tasca do Xico ou Burro Velho (Tábua de carnes ou bife na pedra).",
+        "dormir": "Hotel Casa do Outeiro ou Villa Batalha."
+    },
+    "Dia 5 - Vilas Medievais e Regresso": {
+        "km": "150 km", "tempo": "1h 45m",
+        "pontos": "Batalha » Óbidos » Cascais",
+        "vistas": "Muralhas e ruelas calcetadas de Óbidos (provar a Ginjinha).",
+        "comer": "Jamon Jamon (Pregos e carnes ibéricas).",
+        "dormir": "Chegada a Casa."
+    }
+}
 
-# Barra lateral para credenciais
-st.sidebar.header("Configurações")
-api_key = st.sidebar.text_input("Chave API OpenWeatherMap", type="password", help="Gera uma chave gratuita em openweathermap.org")
+st.title("🏍️ Rota das Aldeias do Xisto")
 
-# Função de obtenção e cache de dados meteorológicos
+# Barra lateral apenas para configurações compactas
+api_key = st.sidebar.text_input("🔑 Chave OpenWeatherMap", type="password", help="Insere a chave para veres a meteorologia no mapa.")
+st.sidebar.markdown("---")
+st.sidebar.info("Total Estimado: 627 km | 13h 00m de condução")
+
 @st.cache_data(ttl=600)
 def obter_meteorologia(lat, lon, key):
     if not key:
-        return "<br><small><i>API Key necessária</i></small>"
-    
+        return "<br><small><i>S/ Info Tempo</i></small>"
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}&units=metric&lang=pt"
     try:
-        resposta = requests.get(url)
-        if resposta.status_code == 200:
-            dados = resposta.json()
-            temp = dados['main']['temp']
-            desc = dados['weather'][0]['description'].capitalize()
-            icone = dados['weather'][0]['icon']
-            return f"<br><img src='http://openweathermap.org/img/wn/{icone}.png' width='30'><br><b>{temp:.1f}°C</b><br>{desc}"
-        return "<br>Dados indisponíveis"
+        res = requests.get(url)
+        if res.status_code == 200:
+            d = res.json()
+            return f"<br><img src='http://openweathermap.org/img/wn/{d['weather'][0]['icon']}.png' width='30'><br><b>{d['main']['temp']:.1f}°C</b>"
+        return ""
     except:
-        return "<br>Erro de ligação"
+        return ""
 
-# Parse do GPX embutido
-gpx = gpxpy.parse(gpx_data)
+col_mapa, col_info = st.columns([6, 4]) # 60% Mapa, 40% Informação
 
-# Inicializar o mapa (centrado na zona centro do país)
-mapa = folium.Map(location=[39.6, -8.5], zoom_start=8)
-cores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#d62728'] # Cores mais contrastantes
-
-# Construção das rotas e marcadores
-for index, rota in enumerate(gpx.routes):
-    cor = cores[index % len(cores)]
-    coordenadas_rota = []
+with col_mapa:
+    gpx = gpxpy.parse(gpx_data)
+    mapa = folium.Map(location=[39.6, -8.5], zoom_start=8)
+    cores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#d62728']
     
-    for ponto in rota.points:
-        coords = (ponto.latitude, ponto.longitude)
-        coordenadas_rota.append(coords)
+    for index, rota in enumerate(gpx.routes):
+        cor = cores[index % len(cores)]
+        coords_rota = []
         
-        info_tempo = obter_meteorologia(ponto.latitude, ponto.longitude, api_key)
-        conteudo_popup = f"<div style='text-align:center; min-width:130px; font-family:sans-serif;'><b>{ponto.name}</b><br><span style='color:gray; font-size:0.9em;'>{rota.name}</span>{info_tempo}</div>"
-        
-        folium.Marker(
-            location=coords,
-            popup=folium.Popup(conteudo_popup, max_width=250),
-            tooltip=ponto.name,
-            icon=folium.Icon(color=cor if cor in ['blue', 'green', 'purple', 'red', 'orange'] else 'blue', icon='flag')
-        ).add_to(mapa)
-        
-    if coordenadas_rota:
-        folium.PolyLine(
-            coordenadas_rota,
-            color=cor,
-            weight=5,
-            opacity=0.8,
-            tooltip=rota.name
-        ).add_to(mapa)
+        for ponto in rota.points:
+            coords = (ponto.latitude, ponto.longitude)
+            coords_rota.append(coords)
+            
+            tempo = obter_meteorologia(ponto.latitude, ponto.longitude, api_key)
+            html_popup = f"<div style='text-align:center; min-width:100px;'><b>{ponto.name}</b>{tempo}</div>"
+            
+            folium.Marker(
+                location=coords,
+                popup=folium.Popup(html_popup, max_width=200),
+                tooltip=f"{ponto.name} ({rota.name})",
+                icon=folium.Icon(color=cor if cor in ['blue', 'green', 'purple', 'red', 'orange'] else 'blue')
+            ).add_to(mapa)
+            
+        if coords_rota:
+            folium.PolyLine(coords_rota, color=cor, weight=5, opacity=0.8).add_to(mapa)
 
-# Renderizar mapa
-st_folium(mapa, width=1200, height=700)
+    st_folium(mapa, width="100%", height=650)
+
+with col_info:
+    st.subheader("📋 Itinerário Detalhado")
+    for dia, info in info_dias.items():
+        with st.expander(f"📍 {dia}"):
+            st.markdown(f"**Rota:** {info['pontos']}")
+            st.markdown(f"**Distância:** {info['km']} | **Tempo:** {info['tempo']}")
+            st.markdown(f"📸 **Paragens & Vistas:** {info['vistas']}")
+            st.markdown(f"🍽️ **Onde Comer:** {info['comer']}")
+            st.markdown(f"🛏️ **Onde Dormir:** {info['dormir']}")
