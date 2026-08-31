@@ -105,7 +105,11 @@ with col_mapa:
     
     # Camadas de UX adicionais
     folium.TileLayer('OpenStreetMap').add_to(mapa)
-    folium.TileLayer('Stamen Terrain', name='Topográfico').add_to(mapa)
+   folium.TileLayer(
+    tiles='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attr='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
+    name='Topográfico'
+).add_to(mapa)
     folium.TileLayer(
         tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attr='Esri', name='Satélite', overlay=False, control=True
