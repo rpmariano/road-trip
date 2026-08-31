@@ -105,7 +105,7 @@ with col_mapa:
     
     # Camadas de UX adicionais
     folium.TileLayer('OpenStreetMap').add_to(mapa)
-   folium.TileLayer(
+    folium.TileLayer(
     tiles='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attr='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
     name='Topográfico'
