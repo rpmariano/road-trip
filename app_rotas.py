@@ -64,7 +64,6 @@ st.sidebar.info("Total Estimado: 627 km | 13h 00m de condução")
 def obter_previsao(lat, lon, key):
     if not key:
         return "<br><small><i>Insere a API Key para Previsão</i></small>"
-    # Usa o endpoint de previsão (5 dias / a cada 3h)
     url = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={key}&units=metric&lang=pt"
     try:
         res = requests.get(url)
@@ -72,22 +71,20 @@ def obter_previsao(lat, lon, key):
             dados = res.json()
             previsoes_diarias = {}
             
-            # Agrupar a previsão selecionando sempre a mais próxima das 15:00
             for item in dados['list']:
                 data_texto, hora = item['dt_txt'].split(' ')
                 if data_texto not in previsoes_diarias or hora == '15:00:00':
                     previsoes_diarias[data_texto] = item
             
-            # Construir os cartões horizontais de UX
             html = "<div style='display: flex; overflow-x: auto; gap: 8px; margin-top: 10px; padding-bottom: 5px;'>"
-            for data, prev in list(previsoes_diarias.items())[:5]: # Mostrar até 5 dias
+            for data, prev in list(previsoes_diarias.items())[:5]:
                 temp = prev['main']['temp']
                 icone = prev['weather'][0]['icon']
                 dia_semana = datetime.datetime.strptime(data, '%Y-%m-%d').strftime('%d/%m')
                 html += f"""
                 <div style='background-color:#f0f2f6; border-radius:8px; padding:6px; min-width:70px; text-align:center;'>
                     <div style='font-size:0.8em; color:#555; font-weight:bold;'>{dia_semana}</div>
-                    <img src='http://openweathermap.org/img/wn/{icone}.png' width='35' style='margin:-5px 0;'>
+                    <img src='https://openweathermap.org/img/wn/{icone}@2x.png' width='40' style='margin:-5px 0;'>
                     <div style='font-size:0.9em; font-weight:bold;'>{temp:.0f}°C</div>
                 </div>
                 """
@@ -97,25 +94,39 @@ def obter_previsao(lat, lon, key):
     except:
         return "<br><small>Erro de ligação</small>"
 
+@st.cache_data(ttl=86400)
+def obter_tracado_estrada(pontos):
+    # API OSRM para desenhar as estradas reais (requer lon,lat)
+    str_coords = ";".join([f"{lon},{lat}" for lat, lon in pontos])
+    url = f"https://router.project-osrm.org/route/v1/driving/{str_coords}?overview=full&geometries=geojson"
+    try:
+        res = requests.get(url)
+        if res.status_code == 200:
+            dados = res.json()
+            # GeoJSON devolve [lon, lat], Folium precisa de [lat, lon]
+            coords_geojson = dados['routes'][0]['geometry']['coordinates']
+            return [[lat, lon] for lon, lat in coords_geojson]
+    except Exception as e:
+        print(f"Erro no routing: {e}")
+    return pontos # Se a API falhar, cai para as linhas retas como redundância
+
 col_mapa, col_info = st.columns([6, 4])
 
 with col_mapa:
     gpx = gpxpy.parse(gpx_data)
     mapa = folium.Map(location=[39.6, -8.5], zoom_start=8)
     
-    # Camadas de UX adicionais
     folium.TileLayer('OpenStreetMap').add_to(mapa)
     folium.TileLayer(
-    tiles='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attr='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
-    name='Topográfico'
-).add_to(mapa)
+        tiles='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        attr='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
+        name='Topográfico'
+    ).add_to(mapa)
     folium.TileLayer(
         tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attr='Esri', name='Satélite', overlay=False, control=True
     ).add_to(mapa)
     
-    # Botão de Fullscreen
     plugins.Fullscreen(position='topright').add_to(mapa)
     
     cores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#d62728']
@@ -123,16 +134,16 @@ with col_mapa:
     
     for index, rota in enumerate(gpx.routes):
         cor = cores[index % len(cores)]
-        coords_rota = []
+        coords_waypoints = []
         
+        # 1. Recolher paragens e criar Marcadores
         for i, ponto in enumerate(rota.points):
             coords = (ponto.latitude, ponto.longitude)
-            coords_rota.append(coords)
+            coords_waypoints.append(coords)
             todas_coords.append(coords)
             
             previsao_html = obter_previsao(ponto.latitude, ponto.longitude, api_key)
             
-            # Popup mais sofisticado
             popup_html = f"""
             <div style='font-family:sans-serif; min-width:250px;'>
                 <h4 style='margin:0; color:{cor};'>{ponto.name}</h4>
@@ -141,7 +152,6 @@ with col_mapa:
             </div>
             """
             
-            # Ícone específico: mota para partida/chegada, bandeira para paragens
             icone_tipo = 'motorcycle' if i == 0 or i == len(rota.points)-1 else 'flag'
             
             folium.Marker(
@@ -151,16 +161,16 @@ with col_mapa:
                 icon=folium.Icon(color=cor if cor in ['blue', 'green', 'purple', 'red', 'orange'] else 'blue', icon=icone_tipo, prefix='fa')
             ).add_to(mapa)
             
-        if coords_rota:
-            # Substituir PolyLine normal por AntPath (linhas animadas)
+        # 2. Obter o traçado das estradas e desenhar a linha
+        if coords_waypoints:
+            tracado_real = obter_tracado_estrada(coords_waypoints)
             plugins.AntPath(
-                locations=coords_rota,
+                locations=tracado_real,
                 color=cor, weight=5, opacity=0.8,
                 dash_array=[10, 20], delay=1000,
-                tooltip=f"{rota.name} (Animação de Rota)"
+                tooltip=f"{rota.name}"
             ).add_to(mapa)
 
-    # Adicionar controlo de camadas e centrar no ecrã de viagem
     folium.LayerControl().add_to(mapa)
     if todas_coords:
         mapa.fit_bounds(todas_coords)
