@@ -56,21 +56,24 @@ info_dias = {
 
 st.title("🏍️ Rota das Aldeias do Xisto")
 
-api_key = st.sidebar.text_input("🔑 Chave OpenWeatherMap", type="password")
+weather_api_key = st.secrets.get("OPENWEATHER_KEY", "")
+ors_api_key = st.secrets.get("ORS_KEY", "")
+
 st.sidebar.markdown("---")
 st.sidebar.info("Total Estimado: 627 km | 13h 00m de condução")
+if not ors_api_key:
+    st.sidebar.error("Falta configurar a ORS_KEY nos Secrets para evitar autoestradas.")
 
 @st.cache_data(ttl=1800)
 def obter_previsao(lat, lon, key):
     if not key:
-        return "<br><small><i>Insere a API Key para Previsão</i></small>"
+        return ""
     url = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={key}&units=metric&lang=pt"
     try:
         res = requests.get(url)
         if res.status_code == 200:
             dados = res.json()
             previsoes_diarias = {}
-            
             for item in dados['list']:
                 data_texto, hora = item['dt_txt'].split(' ')
                 if data_texto not in previsoes_diarias or hora == '15:00:00':
@@ -90,25 +93,43 @@ def obter_previsao(lat, lon, key):
                 """
             html += "</div>"
             return html
-        return "<br><small>Erro na API</small>"
+        return ""
     except:
-        return "<br><small>Erro de ligação</small>"
+        return ""
 
 @st.cache_data(ttl=86400)
-def obter_tracado_estrada(pontos):
-    # API OSRM para desenhar as estradas reais (requer lon,lat)
-    str_coords = ";".join([f"{lon},{lat}" for lat, lon in pontos])
-    url = f"https://router.project-osrm.org/route/v1/driving/{str_coords}?overview=full&geometries=geojson"
+def obter_tracado_cénico(pontos, api_key):
+    # Formato das coordenadas para a API da OpenRouteService
+    coords = [[lon, lat] for lat, lon in pontos]
+    
+    headers = {
+        'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+        'Authorization': api_key,
+        'Content-Type': 'application/json; charset=utf-8'
+    }
+    
+    # Body do pedido: prioriza carro (não têm perfil mota), MAS evita expressways(2) e tollways(3)
+    body = {
+        "coordinates": coords,
+        "options": {
+            "avoid_features": ["highways", "tollways"]
+        },
+        "elevation": False,
+        "instructions": False
+    }
+
+    url = 'https://api.openrouteservice.org/v2/directions/driving-car/geojson'
+    
     try:
-        res = requests.get(url)
+        res = requests.post(url, json=body, headers=headers)
         if res.status_code == 200:
             dados = res.json()
-            # GeoJSON devolve [lon, lat], Folium precisa de [lat, lon]
-            coords_geojson = dados['routes'][0]['geometry']['coordinates']
+            coords_geojson = dados['features'][0]['geometry']['coordinates']
             return [[lat, lon] for lon, lat in coords_geojson]
     except Exception as e:
-        print(f"Erro no routing: {e}")
-    return pontos # Se a API falhar, cai para as linhas retas como redundância
+        print(f"Erro no routing cénico: {e}")
+    
+    return pontos # Falha segura
 
 col_mapa, col_info = st.columns([6, 4])
 
@@ -122,10 +143,6 @@ with col_mapa:
         attr='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
         name='Topográfico'
     ).add_to(mapa)
-    folium.TileLayer(
-        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        attr='Esri', name='Satélite', overlay=False, control=True
-    ).add_to(mapa)
     
     plugins.Fullscreen(position='topright').add_to(mapa)
     
@@ -136,13 +153,12 @@ with col_mapa:
         cor = cores[index % len(cores)]
         coords_waypoints = []
         
-        # 1. Recolher paragens e criar Marcadores
         for i, ponto in enumerate(rota.points):
             coords = (ponto.latitude, ponto.longitude)
             coords_waypoints.append(coords)
             todas_coords.append(coords)
             
-            previsao_html = obter_previsao(ponto.latitude, ponto.longitude, api_key)
+            previsao_html = obter_previsao(ponto.latitude, ponto.longitude, weather_api_key)
             
             popup_html = f"""
             <div style='font-family:sans-serif; min-width:250px;'>
@@ -153,7 +169,6 @@ with col_mapa:
             """
             
             icone_tipo = 'motorcycle' if i == 0 or i == len(rota.points)-1 else 'flag'
-            
             folium.Marker(
                 location=coords,
                 popup=folium.Popup(popup_html, max_width=350),
@@ -161,15 +176,17 @@ with col_mapa:
                 icon=folium.Icon(color=cor if cor in ['blue', 'green', 'purple', 'red', 'orange'] else 'blue', icon=icone_tipo, prefix='fa')
             ).add_to(mapa)
             
-        # 2. Obter o traçado das estradas e desenhar a linha
-        if coords_waypoints:
-            tracado_real = obter_tracado_estrada(coords_waypoints)
+        if coords_waypoints and ors_api_key:
+            tracado_real = obter_tracado_cénico(coords_waypoints, ors_api_key)
             plugins.AntPath(
                 locations=tracado_real,
                 color=cor, weight=5, opacity=0.8,
                 dash_array=[10, 20], delay=1000,
-                tooltip=f"{rota.name}"
+                tooltip=f"{rota.name} (Sem Autoestradas)"
             ).add_to(mapa)
+        elif coords_waypoints:
+            # Se não houver chave, desenha linhas diretas como recurso
+            folium.PolyLine(coords_waypoints, color=cor, weight=3, opacity=0.5).add_to(mapa)
 
     folium.LayerControl().add_to(mapa)
     if todas_coords:
