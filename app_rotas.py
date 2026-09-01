@@ -134,11 +134,37 @@ st.divider()
 if st.session_state.versao_atual == "Versão 1 (Original)":
     gpx_ativo_data, gpx_sombra_data = gpx_data_v1, gpx_data_v2
     info_dias = info_dias_v1
-    st.markdown("<p style='text-align: center; color: #666;'>📍 627 km Totais &nbsp; | &nbsp; ⏱️ 13h 00m de condução</p>", unsafe_allow_html=True)
 else:
     gpx_ativo_data, gpx_sombra_data = gpx_data_v2, gpx_data_v1
     info_dias = info_dias_v2
-    st.markdown("<p style='text-align: center; color: #666;'>📍 665 km Totais &nbsp; | &nbsp; ⏱️ 14h 45m de condução</p>", unsafe_allow_html=True)
+
+# ==========================================
+# CÁLCULO DINÂMICO DE TOTAIS
+# ==========================================
+def calcular_totais(info_dict):
+    km_totais = 0
+    minutos_totais = 0
+    for info in info_dict.values():
+        # Limpar e somar os km
+        km_str = info['km'].replace('km', '').replace('~', '').strip()
+        km_totais += int(km_str)
+        
+        # Limpar e converter as horas/minutos
+        tempo_str = info['tempo'].replace('~', '').strip()
+        h, m = 0, 0
+        if 'h' in tempo_str:
+            h = int(tempo_str.split('h')[0].strip())
+        if 'm' in tempo_str:
+            m = int(tempo_str.split('h')[1].replace('m', '').strip())
+        minutos_totais += (h * 60) + m
+        
+    horas_finais = minutos_totais // 60
+    minutos_finais = minutos_totais % 60
+    return km_totais, f"{horas_finais}h {minutos_finais:02d}m"
+
+# Renderizar os Totais Atualizados
+total_kms, total_tempo = calcular_totais(info_dias)
+st.markdown(f"<p style='text-align: center; color: #666; font-size: 1.1em;'>📍 ~{total_kms} km Totais &nbsp; | &nbsp; ⏱️ ~{total_tempo} de condução</p>", unsafe_allow_html=True)
 
 
 weather_api_key = st.secrets.get("OPENWEATHER_KEY", "")
@@ -201,12 +227,23 @@ with col_mapa:
     # 1. ROTA SOMBRA (Fundo)
     gpx_sombra = gpxpy.parse(gpx_sombra_data)
     for index, rota in enumerate(gpx_sombra.routes):
-        # Apenas mostra a sombra do dia que está em foco, ou de todos se estiver na Visão Geral
-        if st.session_state.dia_foco == "Visão Geral" or st.session_state.dia_foco.split(" (")[0] == rota.name.split(" (")[0]:
+        # A magia está aqui: compara apenas o início da string ("Dia 1", "Dia 2", etc.)
+        prefixo_foco = st.session_state.dia_foco.split("-")[0].strip()
+        prefixo_rota = rota.name.split("-")[0].strip()
+        
+        # Apenas mostra a sombra do dia que está em foco (ou todos na Visão Geral)
+        if st.session_state.dia_foco == "Visão Geral" or prefixo_foco == prefixo_rota:
             coords_sombra = [(pt.latitude, pt.longitude) for pt in rota.points]
             if coords_sombra:
                 tracado_sombra = obter_tracado_cénico(coords_sombra, ors_api_key) if ors_api_key else coords_sombra
-                folium.PolyLine(locations=tracado_sombra, color='grey', weight=5, opacity=0.4, dash_array='8, 8', tooltip=f"Alternativa ({rota.name})").add_to(mapa)
+                folium.PolyLine(
+                    locations=tracado_sombra, 
+                    color='#333333', 
+                    weight=4, 
+                    opacity=0.6, 
+                    dash_array='8, 8', 
+                    tooltip=f"Alternativa ({rota.name})"
+                ).add_to(mapa)
 
     # 2. ROTA ATIVA (Principal)
     gpx_ativo = gpxpy.parse(gpx_ativo_data)
