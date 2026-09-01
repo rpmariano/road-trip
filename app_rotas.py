@@ -145,24 +145,18 @@ def calcular_totais(info_dict):
     km_totais = 0
     minutos_totais = 0
     for info in info_dict.values():
-        # Limpar e somar os km
         km_str = info['km'].replace('km', '').replace('~', '').strip()
         km_totais += int(km_str)
-        
-        # Limpar e converter as horas/minutos
         tempo_str = info['tempo'].replace('~', '').strip()
         h, m = 0, 0
-        if 'h' in tempo_str:
-            h = int(tempo_str.split('h')[0].strip())
-        if 'm' in tempo_str:
-            m = int(tempo_str.split('h')[1].replace('m', '').strip())
+        if 'h' in tempo_str: h = int(tempo_str.split('h')[0].strip())
+        if 'm' in tempo_str: m = int(tempo_str.split('h')[1].replace('m', '').strip())
         minutos_totais += (h * 60) + m
         
     horas_finais = minutos_totais // 60
     minutos_finais = minutos_totais % 60
     return km_totais, f"{horas_finais}h {minutos_finais:02d}m"
 
-# Renderizar os Totais Atualizados
 total_kms, total_tempo = calcular_totais(info_dias)
 st.markdown(f"<p style='text-align: center; color: #666; font-size: 1.1em;'>📍 ~{total_kms} km Totais &nbsp; | &nbsp; ⏱️ ~{total_tempo} de condução</p>", unsafe_allow_html=True)
 
@@ -224,26 +218,29 @@ with col_mapa:
     folium.TileLayer(tiles='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr='Map data: © OpenStreetMap contributors | Map style: © OpenTopoMap (CC-BY-SA)', name='Topográfico').add_to(mapa)
     plugins.Fullscreen(position='topright').add_to(mapa)
     
-    # 1. ROTA SOMBRA (Fundo)
+    # Criar um grupo para a sombra (permite ativar/desativar na caixa de camadas)
+    fg_sombra = folium.FeatureGroup(name="🛣️ Rota Alternativa (Fundo)", show=True)
+    
+    # 1. ROTA SOMBRA (Fundo - Efeito Halo mais grosso)
     gpx_sombra = gpxpy.parse(gpx_sombra_data)
     for index, rota in enumerate(gpx_sombra.routes):
-        # A magia está aqui: compara apenas o início da string ("Dia 1", "Dia 2", etc.)
         prefixo_foco = st.session_state.dia_foco.split("-")[0].strip()
         prefixo_rota = rota.name.split("-")[0].strip()
         
-        # Apenas mostra a sombra do dia que está em foco (ou todos na Visão Geral)
         if st.session_state.dia_foco == "Visão Geral" or prefixo_foco == prefixo_rota:
             coords_sombra = [(pt.latitude, pt.longitude) for pt in rota.points]
             if coords_sombra:
                 tracado_sombra = obter_tracado_cénico(coords_sombra, ors_api_key) if ors_api_key else coords_sombra
                 folium.PolyLine(
                     locations=tracado_sombra, 
-                    color='#333333', 
-                    weight=4, 
-                    opacity=0.6, 
-                    dash_array='8, 8', 
-                    tooltip=f"Alternativa ({rota.name})"
-                ).add_to(mapa)
+                    color='#2c3e50',  # Cinzento super escuro
+                    weight=10,        # MAIS GROSSO que a rota principal para sobressair nas bordas
+                    opacity=0.45, 
+                    dash_array='15, 15', 
+                    tooltip=f"Sombra: {rota.name}"
+                ).add_to(fg_sombra)
+                
+    fg_sombra.add_to(mapa)
 
     # 2. ROTA ATIVA (Principal)
     gpx_ativo = gpxpy.parse(gpx_ativo_data)
