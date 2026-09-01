@@ -8,6 +8,10 @@ from streamlit_folium import st_folium
 
 st.set_page_config(page_title="Rotas Xisto", layout="wide")
 
+# Inicialização da variável de sessão para o comportamento "Acordeão"
+if 'dia_foco' not in st.session_state:
+    st.session_state.dia_foco = "Visão Geral"
+
 gpx_data = """<?xml version="1.0" ?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Gemini" version="1.1">
   <metadata><name>Passeio de Mota - Aldeias de Xisto</name></metadata>
@@ -66,8 +70,7 @@ if not ors_api_key:
 
 @st.cache_data(ttl=1800)
 def obter_previsao(lat, lon, key):
-    if not key:
-        return ""
+    if not key: return ""
     url = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={key}&units=metric&lang=pt"
     try:
         res = requests.get(url)
@@ -94,8 +97,7 @@ def obter_previsao(lat, lon, key):
             html += "</div>"
             return html
         return ""
-    except:
-        return ""
+    except: return ""
 
 @st.cache_data(ttl=86400)
 def obter_tracado_cénico(pontos, api_key):
@@ -108,30 +110,25 @@ def obter_tracado_cénico(pontos, api_key):
     body = {
         "coordinates": coords,
         "options": {"avoid_features": ["highways", "tollways"]},
-        "elevation": False,
-        "instructions": False
+        "elevation": False, "instructions": False
     }
     url = 'https://api.openrouteservice.org/v2/directions/driving-car/geojson'
-    
     try:
         res = requests.post(url, json=body, headers=headers)
         if res.status_code == 200:
-            dados = res.json()
-            coords_geojson = dados['features'][0]['geometry']['coordinates']
+            coords_geojson = res.json()['features'][0]['geometry']['coordinates']
             return [[lat, lon] for lon, lat in coords_geojson]
-    except Exception as e:
-        print(f"Erro no routing cénico: {e}")
+    except Exception as e: print(f"Erro no routing cénico: {e}")
     return pontos
 
 col_mapa, col_info = st.columns([6, 4])
 
-# Definição do tema para cada dia
 temas_dias = [
-    {"hex": "#3498db", "folium": "blue", "emoji": "🔵"},    # Dia 1
-    {"hex": "#e67e22", "folium": "orange", "emoji": "🟠"},  # Dia 2
-    {"hex": "#2ecc71", "folium": "green", "emoji": "🟢"},   # Dia 3
-    {"hex": "#9b59b6", "folium": "purple", "emoji": "🟣"},  # Dia 4
-    {"hex": "#e74c3c", "folium": "red", "emoji": "🔴"}      # Dia 5
+    {"hex": "#3498db", "folium": "blue", "emoji": "🔵"},
+    {"hex": "#e67e22", "folium": "orange", "emoji": "🟠"},
+    {"hex": "#2ecc71", "folium": "green", "emoji": "🟢"},
+    {"hex": "#9b59b6", "folium": "purple", "emoji": "🟣"},
+    {"hex": "#e74c3c", "folium": "red", "emoji": "🔴"}
 ]
 
 with col_mapa:
@@ -144,74 +141,95 @@ with col_mapa:
         attr='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
         name='Topográfico'
     ).add_to(mapa)
-    
     plugins.Fullscreen(position='topright').add_to(mapa)
     
     todas_coords = []
+    coords_dia_focado = [] # Guarda os limites apenas do dia selecionado
     
     for index, rota in enumerate(gpx.routes):
         tema = temas_dias[index % len(temas_dias)]
         coords_waypoints = []
         
+        # Verifica se este é o dia atualmente selecionado (ou se está na Visão Geral)
+        dia_esta_focado = (st.session_state.dia_foco == "Visão Geral") or (st.session_state.dia_foco == rota.name)
+        
+        # Ajusta a visibilidade: dias não focados ficam semi-transparentes
+        opacidade_linha = 0.8 if dia_esta_focado else 0.25
+        peso_linha = 5 if dia_esta_focado else 3
+        
         for i, ponto in enumerate(rota.points):
             coords = (ponto.latitude, ponto.longitude)
             coords_waypoints.append(coords)
             todas_coords.append(coords)
+            if st.session_state.dia_foco == rota.name:
+                coords_dia_focado.append(coords)
             
             previsao_html = obter_previsao(ponto.latitude, ponto.longitude, weather_api_key)
+            popup_html = f"<div style='font-family:sans-serif; min-width:250px;'><h4 style='margin:0; color:{tema['hex']};'>{ponto.name}</h4><p style='margin:2px 0 10px 0; font-size:12px; color:gray;'>{rota.name}</p>{previsao_html}</div>"
             
-            popup_html = f"""
-            <div style='font-family:sans-serif; min-width:250px;'>
-                <h4 style='margin:0; color:{tema['hex']};'>{ponto.name}</h4>
-                <p style='margin:2px 0 10px 0; font-size:12px; color:gray;'>{rota.name}</p>
-                {previsao_html}
-            </div>
-            """
+            # Esconde os marcadores dos dias inativos para limpar o mapa
+            if dia_esta_focado:
+                icone_tipo = 'motorcycle' if i == 0 or i == len(rota.points)-1 else 'flag'
+                folium.Marker(
+                    location=coords,
+                    popup=folium.Popup(popup_html, max_width=350),
+                    tooltip=ponto.name,
+                    icon=folium.Icon(color=tema['folium'], icon=icone_tipo, prefix='fa')
+                ).add_to(mapa)
             
-            icone_tipo = 'motorcycle' if i == 0 or i == len(rota.points)-1 else 'flag'
-            folium.Marker(
-                location=coords,
-                popup=folium.Popup(popup_html, max_width=350),
-                tooltip=ponto.name,
-                icon=folium.Icon(color=tema['folium'], icon=icone_tipo, prefix='fa')
-            ).add_to(mapa)
-            
-        if coords_waypoints and ors_api_key:
-            tracado_real = obter_tracado_cénico(coords_waypoints, ors_api_key)
+        if coords_waypoints:
+            tracado_real = obter_tracado_cénico(coords_waypoints, ors_api_key) if ors_api_key else coords_waypoints
             
             linha_rota = folium.PolyLine(
                 locations=tracado_real,
                 color=tema['hex'], 
-                weight=5, 
-                opacity=0.8,
-                tooltip=f"{rota.name} (Sem Autoestradas)"
+                weight=peso_linha, 
+                opacity=opacidade_linha,
+                tooltip=rota.name
             ).add_to(mapa)
             
-            plugins.PolyLineTextPath(
-                linha_rota, '  ►  ', repeat=True, offset=5.5,
-                attributes={'fill': '#000000', 'font-weight': 'bold', 'font-size': '15'}
-            ).add_to(mapa)
-            
-        elif coords_waypoints:
-            linha_recurso = folium.PolyLine(coords_waypoints, color=tema['hex'], weight=4, opacity=0.6).add_to(mapa)
-            plugins.PolyLineTextPath(
-                linha_recurso, '  ►  ', repeat=True, offset=5.5, 
-                attributes={'fill': '#000000', 'font-weight': 'bold', 'font-size': '15'}
-            ).add_to(mapa)
+            # Só desenha as setas direcionais no dia que está em foco
+            if dia_esta_focado:
+                plugins.PolyLineTextPath(
+                    linha_rota, '  ►  ', repeat=True, offset=5.5,
+                    attributes={'fill': '#000000', 'font-weight': 'bold', 'font-size': '15', 'fill-opacity': '0.7'}
+                ).add_to(mapa)
 
     folium.LayerControl().add_to(mapa)
-    if todas_coords:
+    
+    # Aplica o Zoom (Fit Bounds) dinâmico
+    if st.session_state.dia_foco != "Visão Geral" and coords_dia_focado:
+        mapa.fit_bounds(coords_dia_focado)
+    elif todas_coords:
         mapa.fit_bounds(todas_coords)
 
     st_folium(mapa, width="100%", height=650)
 
+
 with col_info:
     st.subheader("📋 Itinerário Detalhado")
+    
+    # Botão de Reset para ver o mapa todo
+    if st.button("🗺️ Mostrar Toda a Viagem", use_container_width=True):
+        st.session_state.dia_foco = "Visão Geral"
+        st.rerun()
+
     for i, (dia, info) in enumerate(info_dias.items()):
         tema = temas_dias[i % len(temas_dias)]
-        with st.expander(f"{tema['emoji']} {dia}"):
-            st.markdown(f"**🛣️ Rota:** {info['pontos']}")
-            st.markdown(f"**📏 Distância:** {info['km']} | **⏱️ Tempo:** {info['tempo']}")
-            st.markdown(f"📸 **Paragens & Vistas:** {info['vistas']}")
-            st.markdown(f"🍽️ **Onde Comer:** {info['comer']}")
-            st.markdown(f"🛏️ **Onde Dormir:** {info['dormir']}")
+        
+        # O botão serve de gatilho para o "Uncollapse"
+        if st.button(f"{tema['emoji']} {dia}", use_container_width=True):
+            if st.session_state.dia_foco == dia:
+                st.session_state.dia_foco = "Visão Geral" # Clicar no mesmo fecha-o
+            else:
+                st.session_state.dia_foco = dia
+            st.rerun() # Força a atualização imediata do mapa e da interface
+            
+        # O conteúdo expandido: só aparece se este for o dia ativo
+        if st.session_state.dia_foco == dia:
+            with st.container(border=True):
+                st.markdown(f"**🛣️ Rota:** {info['pontos']}")
+                st.markdown(f"**📏 Distância:** {info['km']} | **⏱️ Tempo:** {info['tempo']}")
+                st.markdown(f"📸 **Paragens & Vistas:** {info['vistas']}")
+                st.markdown(f"🍽️ **Onde Comer:** {info['comer']}")
+                st.markdown(f"🛏️ **Onde Dormir:** {info['dormir']}")
