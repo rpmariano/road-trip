@@ -60,7 +60,7 @@ gpx_data_v1 = """<?xml version="1.0" ?>
 </gpx>"""
 
 # ==========================================
-# GPX DA V2 (ALTERNATIVA - ATUALIZADA OTIMIZADA)
+# GPX DA V2 (PORTAS DE RÓDÃO + AUTOESTRADA)
 # ==========================================
 gpx_data_v2 = """<?xml version="1.0" ?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Gemini" version="1.1">
@@ -80,25 +80,19 @@ gpx_data_v2 = """<?xml version="1.0" ?>
     <rtept lat="40.0934" lon="-8.1923"><name>Cerdeira</name></rtept>
     <rtept lat="40.1121" lon="-8.2476"><name>Lousã</name></rtept>
   </rte>
-  <rte><name>Dia 3 - O Coração do Xisto (e Foz d'Égua)</name>
+  <rte><name>Dia 3 - O Coração do Xisto</name>
     <rtept lat="40.1121" lon="-8.2476"><name>Lousã</name></rtept>
     <rtept lat="40.1541" lon="-8.1105"><name>Góis</name></rtept>
     <rtept lat="40.2240" lon="-7.8294"><name>Piódão</name></rtept>
-    <rtept lat="40.2323" lon="-7.8133"><name>Foz d'Égua</name></rtept>
-    <rtept lat="40.2240" lon="-7.8294"><name>Piódão (Regresso)</name></rtept>
   </rte>
-  <rte><name>Dia 4 - Cascatas e Dornes</name>
+  <rte><name>Dia 4 - As Portas de Ródão</name>
     <rtept lat="40.2240" lon="-7.8294"><name>Piódão</name></rtept>
-    <rtept lat="40.2202" lon="-7.9360"><name>Fraga da Pena</name></rtept>
-    <rtept lat="39.7712" lon="-8.2687"><name>Dornes</name></rtept>
-    <rtept lat="39.6589" lon="-8.8252"><name>Batalha</name></rtept>
+    <rtept lat="39.7561" lon="-7.7719"><name>Foz do Cobrão</name></rtept>
+    <rtept lat="39.6570" lon="-7.6740"><name>Vila Velha de Ródão</name></rtept>
   </rte>
-  <rte><name>Dia 5 - Vilas Medievais e a Costa Oeste</name>
-    <rtept lat="39.6589" lon="-8.8252"><name>Batalha</name></rtept>
-    <rtept lat="39.3592" lon="-9.1573"><name>Óbidos</name></rtept>
-    <rtept lat="39.3558" lon="-9.3811"><name>Peniche</name></rtept>
-    <rtept lat="39.1362" lon="-9.3787"><name>Santa Cruz</name></rtept>
-    <rtept lat="38.9637" lon="-9.4173"><name>Ericeira</name></rtept>
+  <rte><name>Dia 5 - Regresso Rápido (Autoestrada)</name>
+    <rtept lat="39.6570" lon="-7.6740"><name>Vila Velha de Ródão</name></rtept>
+    <rtept lat="39.4678" lon="-8.1994"><name>Abrantes (A23)</name></rtept>
     <rtept lat="38.6970" lon="-9.4215"><name>Cascais</name></rtept>
   </rte>
 </gpx>"""
@@ -112,13 +106,13 @@ info_dias_v1 = {
     "Dia 5 - Vilas Medievais e Regresso": {"km": "150 km", "tempo": "1h 45m", "pontos": "Batalha » Óbidos » Cascais (A8/A16)", "vistas": "Muralhas e ruelas calcetadas de Óbidos (Ginjinha).", "comer": "Jamon Jamon (Pregos/Carnes Ibéricas).", "dormir": "Chegada a Casa.", "equipamento": "Fato bem ventilado para tarde amena. Luvas mais leves para trânsito."}
 }
 
-# Informações V2 (Atualizadas com Nazaré, Cerdeira e Dornes)
+# Informações V2
 info_dias_v2 = {
     "Dia 1 - Atlântico e Pinhal": {"km": "165 km", "tempo": "3h 50m", "pontos": "Cascais » Ericeira » Foz do Arelho » Nazaré » S. Pedro Moel » Leiria", "vistas": "Encontro da Lagoa de Óbidos c/ o mar; Sítio da Nazaré; Farol do Penedo da Saudade.", "comer": "Tasca do Zé Mário ou Ao Largo.", "dormir": "Hostel Leiria ou Hotel Ibis.", "equipamento": "Fato de meia-estação. O vento costeiro pode arrefecer; usem luvas windstopper."},
     "Dia 2 - Transição para a Serra": {"km": "105 km", "tempo": "2h 45m", "pontos": "Leiria » Penela » Talasnal » Cerdeira » Alto do Trebim » Lousã", "vistas": "Castelo de Penela, quelhas no Talasnal, refúgio da Cerdeira e panorâmica no Alto do Trebim.", "comer": "O Burgo (Vitela assada).", "dormir": "Palácio da Lousã ou HI Hostel.", "equipamento": "Temperatura desce na serra. Forro térmico acessível na top-case."},
-    "Dia 3 - O Coração (e Foz d'Égua)": {"km": "96 km", "tempo": "3h 00m", "pontos": "Lousã » Góis » Piódão » Foz d'Égua » Piódão", "vistas": "Aldeia do Piódão; Pontes de xisto e ribeiras em Foz d'Égua; Regresso à base no Piódão.", "comer": "O Fontinha (Cabrito assado).", "dormir": "Inatel Piódão ou Casa da Padaria.", "equipamento": "Vales cerrados. Pinlock obrigatório e buff de pescoço contra frio."},
-    "Dia 4 - Cascatas e Dornes": {"km": "170 km", "tempo": "3h 15m", "pontos": "Piódão » Fraga da Pena » Dornes » Batalha", "vistas": "Cascata da Fraga da Pena; Península e torre templária de Dornes; Mosteiro da Batalha.", "comer": "Tasca do Xico ou Burro Velho.", "dormir": "Hotel Casa do Outeiro.", "equipamento": "Manhã fria na serra, tarde quente no litoral. Sistema de camadas ideal."},
-    "Dia 5 - A Costa Oeste": {"km": "180 km", "tempo": "3h 15m", "pontos": "Batalha » Óbidos » Peniche » Sta Cruz » Ericeira » Cascais", "vistas": "Muralhas de Óbidos; Cabo Carvoeiro; Condução costeira N247.", "comer": "Jamon Jamon (Óbidos) ou marisqueiras.", "dormir": "Chegada a Casa.", "equipamento": "Fato bem ventilado mas com proteção para o vento da costa."}
+    "Dia 3 - O Coração do Xisto": {"km": "75 km", "tempo": "2h 00m", "pontos": "Lousã » Góis » Piódão", "vistas": "Margens do rio Ceira; Tarde de descanso na praia fluvial do Piódão.", "comer": "O Fontinha (Cabrito assado).", "dormir": "Inatel Piódão ou Casa da Padaria.", "equipamento": "Vales cerrados. Pinlock obrigatório."},
+    "Dia 4 - As Portas de Ródão": {"km": "115 km", "tempo": "2h 20m", "pontos": "Piódão » Foz do Cobrão » V. V. Ródão", "vistas": "Aldeia de Foz do Cobrão (Ribeira do Ocreza); Monumento Natural das Portas de Ródão.", "comer": "Restaurante Vila Portuguesa (Sopa de Peixe do Tejo).", "dormir": "Hotel Portas de Ródão.", "equipamento": "Clima ameno/quente na aproximação ao Tejo e fronteira com o Alentejo."},
+    "Dia 5 - Regresso Rápido (AE)": {"km": "210 km", "tempo": "2h 00m", "pontos": "V. V. Ródão » A23 » A1 » Cascais", "vistas": "Tirada de autoestrada contínua para minimizar o desgaste da serra.", "comer": "Chegada a Cascais para almoço.", "dormir": "Chegada a Casa.", "equipamento": "Tampões para os ouvidos (earplugs) para viagem prolongada em via rápida."}
 }
 
 st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>🏍️ Rota das Aldeias do Xisto</h1>", unsafe_allow_html=True)
@@ -169,10 +163,14 @@ def obter_previsao(lat, lon, key):
     except: return ""
 
 @st.cache_data(ttl=86400)
-def obter_tracado_cénico(pontos, api_key):
+def obter_tracado_cénico(pontos, api_key, evitar_autoestradas=True):
     coords = [[lon, lat] for lat, lon in pontos]
     headers = {'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8', 'Authorization': api_key, 'Content-Type': 'application/json; charset=utf-8'}
-    body = {"coordinates": coords, "options": {"avoid_features": ["highways", "tollways"]}, "elevation": False, "instructions": False}
+    
+    body = {"coordinates": coords, "elevation": False, "instructions": False}
+    if evitar_autoestradas:
+        body["options"] = {"avoid_features": ["highways", "tollways"]}
+        
     try:
         res = requests.post('https://api.openrouteservice.org/v2/directions/driving-car/geojson', json=body, headers=headers)
         if res.status_code == 200:
@@ -208,7 +206,8 @@ with col_mapa:
         if st.session_state.foco_prefixo == "Visão Geral" or st.session_state.foco_prefixo == prefixo_rota:
             coords_sombra = [(pt.latitude, pt.longitude) for pt in rota.points]
             if coords_sombra:
-                tracado_sombra = obter_tracado_cénico(coords_sombra, ors_api_key) if ors_api_key else coords_sombra
+                evitar_ae = not ("Autoestrada" in rota.name)
+                tracado_sombra = obter_tracado_cénico(coords_sombra, ors_api_key, evitar_ae) if ors_api_key else coords_sombra
                 folium.PolyLine(locations=tracado_sombra, color='#2c3e50', weight=10, opacity=0.45, dash_array='15, 15', tooltip=f"Sombra: {rota.name}").add_to(fg_sombra)
     fg_sombra.add_to(mapa)
 
@@ -239,7 +238,8 @@ with col_mapa:
                 folium.Marker(location=coords, popup=folium.Popup(popup_html, max_width=350), tooltip=ponto.name, icon=folium.Icon(color=tema['folium'], icon=icone_tipo, prefix='fa')).add_to(mapa)
             
         if coords_waypoints:
-            tracado_real = obter_tracado_cénico(coords_waypoints, ors_api_key) if ors_api_key else coords_waypoints
+            evitar_ae = not ("Autoestrada" in rota.name)
+            tracado_real = obter_tracado_cénico(coords_waypoints, ors_api_key, evitar_ae) if ors_api_key else coords_waypoints
             linha_rota = folium.PolyLine(locations=tracado_real, color=tema['hex'], weight=peso_linha, opacity=opacidade_linha, tooltip=rota.name).add_to(mapa)
             
             if dia_esta_focado:
