@@ -8,18 +8,16 @@ from streamlit_folium import st_folium
 
 st.set_page_config(page_title="Rotas Xisto", page_icon="🏍️", layout="wide")
 
-# CSS simplificado para garantir que os botões Primary/Secondary do Streamlit funcionam bem
 st.markdown("""
 <style>
     .block-container { padding-top: 1.5rem !important; padding-bottom: 1rem !important; max-width: 1500px; }
     .stButton>button { border-radius: 8px; padding: 0.5rem 1rem; font-weight: 500; transition: all 0.2s ease; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    /* Pequeno ajuste no tamanho da fonte dentro das caixas expandidas para caber melhor em ecrãs menores */
     .stMarkdown p { font-size: 0.95em; }
 </style>
 """, unsafe_allow_html=True)
 
-# Gestão de Estado Inteligente (Prefixo do Dia e Versão Ativa no Mapa)
+# Gestão de Estado Inteligente
 if 'foco_prefixo' not in st.session_state:
     st.session_state.foco_prefixo = "Visão Geral"
 if 'versao_ativa' not in st.session_state:
@@ -62,7 +60,7 @@ gpx_data_v1 = """<?xml version="1.0" ?>
 </gpx>"""
 
 # ==========================================
-# GPX DA V2 (ALTERNATIVA)
+# GPX DA V2 (ALTERNATIVA - ATUALIZADA)
 # ==========================================
 gpx_data_v2 = """<?xml version="1.0" ?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Gemini" version="1.1">
@@ -85,6 +83,7 @@ gpx_data_v2 = """<?xml version="1.0" ?>
     <rtept lat="40.1541" lon="-8.1105"><name>Góis</name></rtept>
     <rtept lat="40.2240" lon="-7.8294"><name>Piódão</name></rtept>
     <rtept lat="40.2323" lon="-7.8133"><name>Foz d'Égua</name></rtept>
+    <rtept lat="40.2240" lon="-7.8294"><name>Piódão (Regresso)</name></rtept>
   </rte>
   <rte><name>Dia 4 - Cascatas e Património</name>
     <rtept lat="40.2240" lon="-7.8294"><name>Piódão</name></rtept>
@@ -114,7 +113,7 @@ info_dias_v1 = {
 info_dias_v2 = {
     "Dia 1 - Atlântico e Pinhal": {"km": "165 km", "tempo": "3h 45m", "pontos": "Cascais » Ericeira » Foz do Arelho » S. Pedro de Moel » Leiria", "vistas": "Encontro da Lagoa de Óbidos com o mar; Farol do Penedo da Saudade.", "comer": "Tasca do Zé Mário ou Ao Largo.", "dormir": "Hostel Leiria ou Hotel Ibis.", "equipamento": "Fato de meia-estação. O vento costeiro pode arrefecer; usem luvas windstopper."},
     "Dia 2 - Transição para a Serra": {"km": "92 km", "tempo": "2h 15m", "pontos": "Leiria » Penela » Talasnal » Lousã", "vistas": "Castelo de Penela e quelhas a pé no Talasnal.", "comer": "O Burgo (Vitela assada).", "dormir": "Palácio da Lousã ou HI Hostel.", "equipamento": "Temperatura desce na serra. Forro térmico acessível na top-case."},
-    "Dia 3 - O Coração (e Foz d'Égua)": {"km": "88 km", "tempo": "2h 45m", "pontos": "Lousã » Góis » Piódão » Foz d'Égua", "vistas": "Aldeia do Piódão; Pontes de xisto e ribeiras em Foz d'Égua.", "comer": "O Fontinha (Cabrito assado).", "dormir": "Inatel Piódão ou Casa da Padaria.", "equipamento": "Vales cerrados. Pinlock obrigatório e buff de pescoço contra frio."},
+    "Dia 3 - O Coração (e Foz d'Égua)": {"km": "96 km", "tempo": "3h 00m", "pontos": "Lousã » Góis » Piódão » Foz d'Égua » Piódão", "vistas": "Aldeia do Piódão; Pontes de xisto e ribeiras em Foz d'Égua; Regresso à base no Piódão.", "comer": "O Fontinha (Cabrito assado).", "dormir": "Inatel Piódão ou Casa da Padaria.", "equipamento": "Vales cerrados. Pinlock obrigatório e buff de pescoço contra frio."},
     "Dia 4 - Cascatas e Património": {"km": "140 km", "tempo": "2h 45m", "pontos": "Piódão » Fraga da Pena » Batalha", "vistas": "Cascata da Fraga da Pena; Mosteiro da Batalha.", "comer": "Tasca do Xico ou Burro Velho.", "dormir": "Hotel Casa do Outeiro.", "equipamento": "Manhã fria na serra, tarde quente no litoral. Sistema de camadas ideal."},
     "Dia 5 - A Costa Oeste": {"km": "180 km", "tempo": "3h 15m", "pontos": "Batalha » Óbidos » Peniche » Sta Cruz » Ericeira » Cascais", "vistas": "Muralhas de Óbidos; Cabo Carvoeiro; Condução costeira N247.", "comer": "Jamon Jamon (Óbidos) ou marisqueiras.", "dormir": "Chegada a Casa.", "equipamento": "Fato bem ventilado mas com proteção para o vento da costa."}
 }
@@ -133,7 +132,6 @@ def calcular_totais(info_dict):
         minutos_totais += (h * 60) + m
     return km_totais, f"{minutos_totais // 60}h {minutos_totais % 60:02d}m"
 
-# Atribuir os dados corretos ao Mapa com base na versão ativa selecionada
 if st.session_state.versao_ativa == "V1":
     gpx_ativo_data, gpx_sombra_data = gpx_data_v1, gpx_data_v2
 else:
@@ -180,7 +178,6 @@ def obter_tracado_cénico(pontos, api_key):
     except Exception as e: print(f"Erro: {e}")
     return pontos
 
-# Nova configuração de layout em 3 colunas (Mapa a dominar, e as duas versões lado a lado)
 col_mapa, col_info_v1, col_info_v2 = st.columns([6, 3, 3], gap="medium")
 
 temas_dias = [
@@ -202,7 +199,6 @@ with col_mapa:
     
     fg_sombra = folium.FeatureGroup(name="🛣️ Rota Alternativa (Fundo)", show=True)
     
-    # Desenhar Sombra
     gpx_sombra = gpxpy.parse(gpx_sombra_data)
     for index, rota in enumerate(gpx_sombra.routes):
         prefixo_rota = rota.name.split("-")[0].strip()
@@ -213,7 +209,6 @@ with col_mapa:
                 folium.PolyLine(locations=tracado_sombra, color='#2c3e50', weight=10, opacity=0.45, dash_array='15, 15', tooltip=f"Sombra: {rota.name}").add_to(fg_sombra)
     fg_sombra.add_to(mapa)
 
-    # Desenhar Rota Ativa
     gpx_ativo = gpxpy.parse(gpx_ativo_data)
     todas_coords = []
     coords_dia_focado = [] 
@@ -265,7 +260,6 @@ with col_info_v1:
     km_v1, tempo_v1 = calcular_totais(info_dias_v1)
     st.markdown(f"<p style='text-align: center; color: gray; font-size: 0.9em; margin-top:0;'>📍 ~{km_v1} km | ⏱️ ~{tempo_v1}</p>", unsafe_allow_html=True)
     
-    # Botão Geral V1 (Fica Primário se V1 estiver ativa na Visão Geral)
     is_v1_geral = (st.session_state.foco_prefixo == "Visão Geral" and st.session_state.versao_ativa == "V1")
     if st.button("🗺️ Mostrar Toda a V1", key="all_v1", use_container_width=True, type="primary" if is_v1_geral else "secondary"):
         st.session_state.foco_prefixo = "Visão Geral"
@@ -274,9 +268,8 @@ with col_info_v1:
 
     for i, (dia_key, info) in enumerate(info_dias_v1.items()):
         tema = temas_dias[i % len(temas_dias)]
-        prefixo = dia_key.split("-")[0].strip() # Isola "Dia 1", "Dia 2", etc.
+        prefixo = dia_key.split("-")[0].strip()
         
-        # O botão fica destacado (primary) se for este dia E a versão V1 estiver a ditar o mapa
         is_active_btn = (st.session_state.foco_prefixo == prefixo and st.session_state.versao_ativa == "V1")
         
         if st.button(f"{tema['emoji']} {dia_key}", key=f"btn_v1_{i}", use_container_width=True, type="primary" if is_active_btn else "secondary"):
@@ -284,7 +277,6 @@ with col_info_v1:
             st.session_state.versao_ativa = "V1"
             st.rerun()
             
-        # Expande os detalhes se o prefixo bater certo (abre simultaneamente com o lado V2)
         if st.session_state.foco_prefixo == prefixo:
             with st.container(border=True):
                 st.markdown(f"**🛣️ Rota:** {info['pontos']}")
@@ -302,7 +294,6 @@ with col_info_v2:
     km_v2, tempo_v2 = calcular_totais(info_dias_v2)
     st.markdown(f"<p style='text-align: center; color: gray; font-size: 0.9em; margin-top:0;'>📍 ~{km_v2} km | ⏱️ ~{tempo_v2}</p>", unsafe_allow_html=True)
     
-    # Botão Geral V2
     is_v2_geral = (st.session_state.foco_prefixo == "Visão Geral" and st.session_state.versao_ativa == "V2")
     if st.button("🗺️ Mostrar Toda a V2", key="all_v2", use_container_width=True, type="primary" if is_v2_geral else "secondary"):
         st.session_state.foco_prefixo = "Visão Geral"
