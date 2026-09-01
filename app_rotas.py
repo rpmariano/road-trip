@@ -6,44 +6,64 @@ import requests
 import datetime
 from streamlit_folium import st_folium
 
-st.set_page_config(page_title="Rotas Xisto", layout="wide")
+st.set_page_config(page_title="Rotas Xisto", page_icon="🏍️", layout="wide")
 
-# Inicialização da variável de sessão para o comportamento "Acordeão"
+# CSS customizado para otimização Mobile e Desktop
+st.markdown("""
+<style>
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+        max-width: 1400px;
+    }
+    .stButton>button {
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        font-size: 16px;
+        font-weight: 500;
+        border: 1px solid #ddd;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        border-color: #ff4b4b;
+        color: #ff4b4b;
+    }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
 if 'dia_foco' not in st.session_state:
     st.session_state.dia_foco = "Visão Geral"
 
 gpx_data = """<?xml version="1.0" ?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Gemini" version="1.1">
   <metadata><name>Passeio de Mota - Aldeias de Xisto</name></metadata>
-  <rte>
-    <name>Dia 1 - Atlântico e Pinhal</name>
+  <rte><name>Dia 1 - Atlântico e Pinhal</name>
     <rtept lat="38.6979" lon="-9.4215"><name>Cascais</name></rtept>
     <rtept lat="38.9616" lon="-9.4139"><name>Ericeira</name></rtept>
     <rtept lat="39.4290" lon="-9.2201"><name>Foz do Arelho</name></rtept>
     <rtept lat="39.7583" lon="-9.0306"><name>São Pedro de Moel</name></rtept>
     <rtept lat="39.7436" lon="-8.8071"><name>Leiria</name></rtept>
   </rte>
-  <rte>
-    <name>Dia 2 - Transição para a Serra</name>
+  <rte><name>Dia 2 - Transição para a Serra</name>
     <rtept lat="39.7436" lon="-8.8071"><name>Leiria</name></rtept>
     <rtept lat="40.0302" lon="-8.3897"><name>Penela</name></rtept>
     <rtept lat="40.0945" lon="-8.2307"><name>Talasnal</name></rtept>
     <rtept lat="40.1121" lon="-8.2476"><name>Lousã</name></rtept>
   </rte>
-  <rte>
-    <name>Dia 3 - O Coração do Xisto</name>
+  <rte><name>Dia 3 - O Coração do Xisto</name>
     <rtept lat="40.1121" lon="-8.2476"><name>Lousã</name></rtept>
     <rtept lat="40.1539" lon="-8.1105"><name>Góis</name></rtept>
     <rtept lat="40.2294" lon="-7.8250"><name>Piódão</name></rtept>
   </rte>
-  <rte>
-    <name>Dia 4 - Cascatas e Património</name>
+  <rte><name>Dia 4 - Cascatas e Património</name>
     <rtept lat="40.2294" lon="-7.8250"><name>Piódão</name></rtept>
     <rtept lat="40.2185" lon="-7.9355"><name>Fraga da Pena</name></rtept>
     <rtept lat="39.6589" lon="-8.8247"><name>Batalha</name></rtept>
   </rte>
-  <rte>
-    <name>Dia 5 - Vilas Medievais e Regresso</name>
+  <rte><name>Dia 5 - Vilas Medievais e Regresso</name>
     <rtept lat="39.6589" lon="-8.8247"><name>Batalha</name></rtept>
     <rtept lat="39.3621" lon="-9.1571"><name>Óbidos</name></rtept>
     <rtept lat="38.6979" lon="-9.4215"><name>Cascais</name></rtept>
@@ -51,22 +71,57 @@ gpx_data = """<?xml version="1.0" ?>
 </gpx>"""
 
 info_dias = {
-    "Dia 1 - Atlântico e Pinhal": {"km": "165 km", "tempo": "3h 45m", "pontos": "Cascais » Ericeira » Foz do Arelho » S. Pedro de Moel » Leiria", "vistas": "Encontro da Lagoa de Óbidos com o mar; Farol do Penedo da Saudade.", "comer": "Tasca do Zé Mário ou Ao Largo.", "dormir": "Hostel Leiria ou Hotel Ibis Leiria."},
-    "Dia 2 - Transição para a Serra": {"km": "92 km", "tempo": "2h 15m", "pontos": "Leiria » Penela » Talasnal » Lousã", "vistas": "Castelo de Penela e quelhas a pé no Talasnal.", "comer": "O Burgo (Vitela assada no forno a lenha).", "dormir": "Palácio da Lousã Boutique Hotel ou HI Hostel Lousã."},
-    "Dia 3 - O Coração do Xisto": {"km": "80 km", "tempo": "2h 30m", "pontos": "Lousã » Góis » Piódão", "vistas": "Margens do rio Ceira (Góis); Anfiteatro do Piódão.", "comer": "O Fontinha (Cabrito assado).", "dormir": "Inatel Piódão ou Casa da Padaria."},
-    "Dia 4 - Cascatas e Património": {"km": "140 km", "tempo": "2h 45m", "pontos": "Piódão » Fraga da Pena » Batalha", "vistas": "Cascata da Fraga da Pena; Mosteiro da Batalha.", "comer": "Tasca do Xico ou Burro Velho.", "dormir": "Hotel Casa do Outeiro ou Villa Batalha."},
-    "Dia 5 - Vilas Medievais e Regresso": {"km": "150 km", "tempo": "1h 45m", "pontos": "Batalha » Óbidos » Cascais", "vistas": "Muralhas e ruelas de Óbidos.", "comer": "Jamon Jamon.", "dormir": "Chegada a Casa."}
+    "Dia 1 - Atlântico e Pinhal": {
+        "km": "165 km", "tempo": "3h 45m", 
+        "pontos": "Cascais » Ericeira » Foz do Arelho » S. Pedro de Moel » Leiria", 
+        "vistas": "Encontro da Lagoa de Óbidos com o mar; Farol do Penedo da Saudade.", 
+        "comer": "Tasca do Zé Mário ou Ao Largo.", 
+        "dormir": "Hostel Leiria ou Hotel Ibis Leiria.",
+        "equipamento": "Fato de meia-estação. O vento costeiro e a nortada podem arrefecer o corpo. Usem luvas que cortem o vento (windstopper) e fechem as entradas de ar frontais do casaco durante a manhã."
+    },
+    "Dia 2 - Transição para a Serra": {
+        "km": "92 km", "tempo": "2h 15m", 
+        "pontos": "Leiria » Penela » Talasnal » Lousã", 
+        "vistas": "Castelo de Penela e quelhas a pé no Talasnal.", 
+        "comer": "O Burgo (Vitela assada no forno a lenha).", 
+        "dormir": "Palácio da Lousã Boutique Hotel ou HI Hostel Lousã.",
+        "equipamento": "Ao subirem de elevação em direção à serra, a temperatura desce. Garantam que o forro térmico ou um impermeável leve vai à mão na top-case para vestirem quando o frio apertar perto do Talasnal."
+    },
+    "Dia 3 - O Coração do Xisto": {
+        "km": "80 km", "tempo": "2h 30m", 
+        "pontos": "Lousã » Góis » Piódão", 
+        "vistas": "Margens do rio Ceira (Góis); Anfiteatro do Piódão.", 
+        "comer": "O Fontinha (Cabrito assado).", 
+        "dormir": "Inatel Piódão ou Casa da Padaria.",
+        "equipamento": "Dia exigente e húmido nos vales cerrados. Pinlock obrigatório no capacete para a viseira não embaciar, luvas mais quentes (ou punhos aquecidos ligados) e um bom *buff* de pescoço para evitar as correntes de ar frio."
+    },
+    "Dia 4 - Cascatas e Património": {
+        "km": "140 km", "tempo": "2h 45m", 
+        "pontos": "Piódão » Fraga da Pena » Batalha", 
+        "vistas": "Cascata da Fraga da Pena; Mosteiro da Batalha.", 
+        "comer": "Tasca do Xico ou Burro Velho.", 
+        "dormir": "Hotel Casa do Outeiro ou Villa Batalha.",
+        "equipamento": "Sistema de 'camadas'. A manhã no Piódão será fria, mas à tarde, na descida para a Batalha, o clima aquece. Tirem o forro ao almoço e troquem para luvas de verão/malha à tarde."
+    },
+    "Dia 5 - Vilas Medievais e Regresso": {
+        "km": "150 km", "tempo": "1h 45m", 
+        "pontos": "Batalha » Óbidos » Cascais", 
+        "vistas": "Muralhas e ruelas de Óbidos.", 
+        "comer": "Jamon Jamon.", 
+        "dormir": "Chegada a Casa.",
+        "equipamento": "Clima de final de verão. Fato bem ventilado (podem abrir os fechos todos), óculos de sol (ou viseira escura no capacete) e luvas leves para maior destreza no trânsito à aproximação a Cascais."
+    }
 }
 
-st.title("🏍️ Rota das Aldeias do Xisto")
+st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>🏍️ Rota das Aldeias do Xisto</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #666; font-size: 1.1em;'>📍 627 km &nbsp; | &nbsp; ⏱️ 13h 00m de condução</p>", unsafe_allow_html=True)
+st.divider()
 
 weather_api_key = st.secrets.get("OPENWEATHER_KEY", "")
 ors_api_key = st.secrets.get("ORS_KEY", "")
 
-st.sidebar.markdown("---")
-st.sidebar.info("Total Estimado: 627 km | 13h 00m de condução")
 if not ors_api_key:
-    st.sidebar.error("Falta configurar a ORS_KEY nos Secrets para evitar autoestradas.")
+    st.warning("⚠️ Chave de Rotas (ORS_KEY) não configurada. A exibir ligação direta entre os pontos.")
 
 @st.cache_data(ttl=1800)
 def obter_previsao(lat, lon, key):
@@ -121,7 +176,7 @@ def obter_tracado_cénico(pontos, api_key):
     except Exception as e: print(f"Erro no routing cénico: {e}")
     return pontos
 
-col_mapa, col_info = st.columns([6, 4])
+col_mapa, col_info = st.columns([6, 4], gap="large")
 
 temas_dias = [
     {"hex": "#3498db", "folium": "blue", "emoji": "🔵"},
@@ -144,16 +199,14 @@ with col_mapa:
     plugins.Fullscreen(position='topright').add_to(mapa)
     
     todas_coords = []
-    coords_dia_focado = [] # Guarda os limites apenas do dia selecionado
+    coords_dia_focado = [] 
     
     for index, rota in enumerate(gpx.routes):
         tema = temas_dias[index % len(temas_dias)]
         coords_waypoints = []
         
-        # Verifica se este é o dia atualmente selecionado (ou se está na Visão Geral)
         dia_esta_focado = (st.session_state.dia_foco == "Visão Geral") or (st.session_state.dia_foco == rota.name)
         
-        # Ajusta a visibilidade: dias não focados ficam semi-transparentes
         opacidade_linha = 0.8 if dia_esta_focado else 0.25
         peso_linha = 5 if dia_esta_focado else 3
         
@@ -167,7 +220,6 @@ with col_mapa:
             previsao_html = obter_previsao(ponto.latitude, ponto.longitude, weather_api_key)
             popup_html = f"<div style='font-family:sans-serif; min-width:250px;'><h4 style='margin:0; color:{tema['hex']};'>{ponto.name}</h4><p style='margin:2px 0 10px 0; font-size:12px; color:gray;'>{rota.name}</p>{previsao_html}</div>"
             
-            # Esconde os marcadores dos dias inativos para limpar o mapa
             if dia_esta_focado:
                 icone_tipo = 'motorcycle' if i == 0 or i == len(rota.points)-1 else 'flag'
                 folium.Marker(
@@ -188,7 +240,6 @@ with col_mapa:
                 tooltip=rota.name
             ).add_to(mapa)
             
-            # Só desenha as setas direcionais no dia que está em foco
             if dia_esta_focado:
                 plugins.PolyLineTextPath(
                     linha_rota, '  ►  ', repeat=True, offset=5.5,
@@ -197,19 +248,17 @@ with col_mapa:
 
     folium.LayerControl().add_to(mapa)
     
-    # Aplica o Zoom (Fit Bounds) dinâmico
     if st.session_state.dia_foco != "Visão Geral" and coords_dia_focado:
         mapa.fit_bounds(coords_dia_focado)
     elif todas_coords:
         mapa.fit_bounds(todas_coords)
 
-    st_folium(mapa, width="100%", height=650)
+    st_folium(mapa, use_container_width=True, height=500)
 
 
 with col_info:
-    st.subheader("📋 Itinerário Detalhado")
+    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
     
-    # Botão de Reset para ver o mapa todo
     if st.button("🗺️ Mostrar Toda a Viagem", use_container_width=True):
         st.session_state.dia_foco = "Visão Geral"
         st.rerun()
@@ -217,19 +266,18 @@ with col_info:
     for i, (dia, info) in enumerate(info_dias.items()):
         tema = temas_dias[i % len(temas_dias)]
         
-        # O botão serve de gatilho para o "Uncollapse"
         if st.button(f"{tema['emoji']} {dia}", use_container_width=True):
             if st.session_state.dia_foco == dia:
-                st.session_state.dia_foco = "Visão Geral" # Clicar no mesmo fecha-o
+                st.session_state.dia_foco = "Visão Geral"
             else:
                 st.session_state.dia_foco = dia
-            st.rerun() # Força a atualização imediata do mapa e da interface
+            st.rerun()
             
-        # O conteúdo expandido: só aparece se este for o dia ativo
         if st.session_state.dia_foco == dia:
             with st.container(border=True):
                 st.markdown(f"**🛣️ Rota:** {info['pontos']}")
                 st.markdown(f"**📏 Distância:** {info['km']} | **⏱️ Tempo:** {info['tempo']}")
-                st.markdown(f"📸 **Paragens & Vistas:** {info['vistas']}")
-                st.markdown(f"🍽️ **Onde Comer:** {info['comer']}")
-                st.markdown(f"🛏️ **Onde Dormir:** {info['dormir']}")
+                st.markdown(f"📸 **Paragens:** {info['vistas']}")
+                st.markdown(f"🍽️ **Comer:** {info['comer']}")
+                st.markdown(f"🛏️ **Dormir:** {info['dormir']}")
+                st.markdown(f"🧳 **Equipamento:** {info['equipamento']}")
