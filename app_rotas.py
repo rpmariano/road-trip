@@ -99,25 +99,18 @@ def obter_previsao(lat, lon, key):
 
 @st.cache_data(ttl=86400)
 def obter_tracado_cénico(pontos, api_key):
-    # Formato das coordenadas para a API da OpenRouteService
     coords = [[lon, lat] for lat, lon in pontos]
-    
     headers = {
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
         'Authorization': api_key,
         'Content-Type': 'application/json; charset=utf-8'
     }
-    
-    # Body do pedido: prioriza carro (não têm perfil mota), MAS evita expressways(2) e tollways(3)
     body = {
         "coordinates": coords,
-        "options": {
-            "avoid_features": ["highways", "tollways"]
-        },
+        "options": {"avoid_features": ["highways", "tollways"]},
         "elevation": False,
         "instructions": False
     }
-
     url = 'https://api.openrouteservice.org/v2/directions/driving-car/geojson'
     
     try:
@@ -128,10 +121,18 @@ def obter_tracado_cénico(pontos, api_key):
             return [[lat, lon] for lon, lat in coords_geojson]
     except Exception as e:
         print(f"Erro no routing cénico: {e}")
-    
-    return pontos # Falha segura
+    return pontos
 
 col_mapa, col_info = st.columns([6, 4])
+
+# Definição do tema para cada dia
+temas_dias = [
+    {"hex": "#3498db", "folium": "blue", "emoji": "🔵"},    # Dia 1
+    {"hex": "#e67e22", "folium": "orange", "emoji": "🟠"},  # Dia 2
+    {"hex": "#2ecc71", "folium": "green", "emoji": "🟢"},   # Dia 3
+    {"hex": "#9b59b6", "folium": "purple", "emoji": "🟣"},  # Dia 4
+    {"hex": "#e74c3c", "folium": "red", "emoji": "🔴"}      # Dia 5
+]
 
 with col_mapa:
     gpx = gpxpy.parse(gpx_data)
@@ -146,11 +147,10 @@ with col_mapa:
     
     plugins.Fullscreen(position='topright').add_to(mapa)
     
-    cores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#d62728']
     todas_coords = []
     
     for index, rota in enumerate(gpx.routes):
-        cor = cores[index % len(cores)]
+        tema = temas_dias[index % len(temas_dias)]
         coords_waypoints = []
         
         for i, ponto in enumerate(rota.points):
@@ -162,7 +162,7 @@ with col_mapa:
             
             popup_html = f"""
             <div style='font-family:sans-serif; min-width:250px;'>
-                <h4 style='margin:0; color:{cor};'>{ponto.name}</h4>
+                <h4 style='margin:0; color:{tema['hex']};'>{ponto.name}</h4>
                 <p style='margin:2px 0 10px 0; font-size:12px; color:gray;'>{rota.name}</p>
                 {previsao_html}
             </div>
@@ -173,20 +173,31 @@ with col_mapa:
                 location=coords,
                 popup=folium.Popup(popup_html, max_width=350),
                 tooltip=ponto.name,
-                icon=folium.Icon(color=cor if cor in ['blue', 'green', 'purple', 'red', 'orange'] else 'blue', icon=icone_tipo, prefix='fa')
+                icon=folium.Icon(color=tema['folium'], icon=icone_tipo, prefix='fa')
             ).add_to(mapa)
             
         if coords_waypoints and ors_api_key:
             tracado_real = obter_tracado_cénico(coords_waypoints, ors_api_key)
-            plugins.AntPath(
+            
+            linha_rota = folium.PolyLine(
                 locations=tracado_real,
-                color=cor, weight=5, opacity=0.8,
-                dash_array=[10, 20], delay=1000,
+                color=tema['hex'], 
+                weight=5, 
+                opacity=0.8,
                 tooltip=f"{rota.name} (Sem Autoestradas)"
             ).add_to(mapa)
+            
+            plugins.PolyLineTextPath(
+                linha_rota, '  ►  ', repeat=True, offset=5.5,
+                attributes={'fill': '#000000', 'font-weight': 'bold', 'font-size': '15'}
+            ).add_to(mapa)
+            
         elif coords_waypoints:
-            # Se não houver chave, desenha linhas diretas como recurso
-            folium.PolyLine(coords_waypoints, color=cor, weight=3, opacity=0.5).add_to(mapa)
+            linha_recurso = folium.PolyLine(coords_waypoints, color=tema['hex'], weight=4, opacity=0.6).add_to(mapa)
+            plugins.PolyLineTextPath(
+                linha_recurso, '  ►  ', repeat=True, offset=5.5, 
+                attributes={'fill': '#000000', 'font-weight': 'bold', 'font-size': '15'}
+            ).add_to(mapa)
 
     folium.LayerControl().add_to(mapa)
     if todas_coords:
@@ -196,8 +207,9 @@ with col_mapa:
 
 with col_info:
     st.subheader("📋 Itinerário Detalhado")
-    for dia, info in info_dias.items():
-        with st.expander(f"📍 {dia}"):
+    for i, (dia, info) in enumerate(info_dias.items()):
+        tema = temas_dias[i % len(temas_dias)]
+        with st.expander(f"{tema['emoji']} {dia}"):
             st.markdown(f"**🛣️ Rota:** {info['pontos']}")
             st.markdown(f"**📏 Distância:** {info['km']} | **⏱️ Tempo:** {info['tempo']}")
             st.markdown(f"📸 **Paragens & Vistas:** {info['vistas']}")
