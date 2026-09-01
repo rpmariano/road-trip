@@ -60,7 +60,7 @@ gpx_data_v1 = """<?xml version="1.0" ?>
 </gpx>"""
 
 # ==========================================
-# GPX DA V2 (ALTERNATIVA - ATUALIZADA)
+# GPX DA V2 (ALTERNATIVA - ATUALIZADA OTIMIZADA)
 # ==========================================
 gpx_data_v2 = """<?xml version="1.0" ?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Gemini" version="1.1">
@@ -69,6 +69,7 @@ gpx_data_v2 = """<?xml version="1.0" ?>
     <rtept lat="38.6970" lon="-9.4215"><name>Cascais</name></rtept>
     <rtept lat="38.9637" lon="-9.4173"><name>Ericeira</name></rtept>
     <rtept lat="39.4290" lon="-9.2248"><name>Foz do Arelho</name></rtept>
+    <rtept lat="39.6047" lon="-9.0830"><name>Nazaré</name></rtept>
     <rtept lat="39.7640" lon="-9.0310"><name>São Pedro de Moel</name></rtept>
     <rtept lat="39.7436" lon="-8.8071"><name>Leiria</name></rtept>
   </rte>
@@ -76,6 +77,7 @@ gpx_data_v2 = """<?xml version="1.0" ?>
     <rtept lat="39.7436" lon="-8.8071"><name>Leiria</name></rtept>
     <rtept lat="40.0310" lon="-8.3900"><name>Penela</name></rtept>
     <rtept lat="40.0925" lon="-8.2263"><name>Talasnal</name></rtept>
+    <rtept lat="40.0934" lon="-8.1923"><name>Cerdeira</name></rtept>
     <rtept lat="40.1121" lon="-8.2476"><name>Lousã</name></rtept>
   </rte>
   <rte><name>Dia 3 - O Coração do Xisto (e Foz d'Égua)</name>
@@ -85,9 +87,10 @@ gpx_data_v2 = """<?xml version="1.0" ?>
     <rtept lat="40.2323" lon="-7.8133"><name>Foz d'Égua</name></rtept>
     <rtept lat="40.2240" lon="-7.8294"><name>Piódão (Regresso)</name></rtept>
   </rte>
-  <rte><name>Dia 4 - Cascatas e Património</name>
+  <rte><name>Dia 4 - Cascatas e Dornes</name>
     <rtept lat="40.2240" lon="-7.8294"><name>Piódão</name></rtept>
     <rtept lat="40.2202" lon="-7.9360"><name>Fraga da Pena</name></rtept>
+    <rtept lat="39.7712" lon="-8.2687"><name>Dornes</name></rtept>
     <rtept lat="39.6589" lon="-8.8252"><name>Batalha</name></rtept>
   </rte>
   <rte><name>Dia 5 - Vilas Medievais e a Costa Oeste</name>
@@ -109,12 +112,12 @@ info_dias_v1 = {
     "Dia 5 - Vilas Medievais e Regresso": {"km": "150 km", "tempo": "1h 45m", "pontos": "Batalha » Óbidos » Cascais (A8/A16)", "vistas": "Muralhas e ruelas calcetadas de Óbidos (Ginjinha).", "comer": "Jamon Jamon (Pregos/Carnes Ibéricas).", "dormir": "Chegada a Casa.", "equipamento": "Fato bem ventilado para tarde amena. Luvas mais leves para trânsito."}
 }
 
-# Informações V2
+# Informações V2 (Atualizadas com Nazaré, Cerdeira e Dornes)
 info_dias_v2 = {
-    "Dia 1 - Atlântico e Pinhal": {"km": "165 km", "tempo": "3h 45m", "pontos": "Cascais » Ericeira » Foz do Arelho » S. Pedro de Moel » Leiria", "vistas": "Encontro da Lagoa de Óbidos com o mar; Farol do Penedo da Saudade.", "comer": "Tasca do Zé Mário ou Ao Largo.", "dormir": "Hostel Leiria ou Hotel Ibis.", "equipamento": "Fato de meia-estação. O vento costeiro pode arrefecer; usem luvas windstopper."},
-    "Dia 2 - Transição para a Serra": {"km": "92 km", "tempo": "2h 15m", "pontos": "Leiria » Penela » Talasnal » Lousã", "vistas": "Castelo de Penela e quelhas a pé no Talasnal.", "comer": "O Burgo (Vitela assada).", "dormir": "Palácio da Lousã ou HI Hostel.", "equipamento": "Temperatura desce na serra. Forro térmico acessível na top-case."},
+    "Dia 1 - Atlântico e Pinhal": {"km": "165 km", "tempo": "3h 50m", "pontos": "Cascais » Ericeira » Foz do Arelho » Nazaré » S. Pedro Moel » Leiria", "vistas": "Encontro da Lagoa de Óbidos c/ o mar; Sítio da Nazaré; Farol do Penedo da Saudade.", "comer": "Tasca do Zé Mário ou Ao Largo.", "dormir": "Hostel Leiria ou Hotel Ibis.", "equipamento": "Fato de meia-estação. O vento costeiro pode arrefecer; usem luvas windstopper."},
+    "Dia 2 - Transição para a Serra": {"km": "105 km", "tempo": "2h 45m", "pontos": "Leiria » Penela » Talasnal » Cerdeira » Alto do Trebim » Lousã", "vistas": "Castelo de Penela, quelhas no Talasnal, refúgio da Cerdeira e panorâmica no Alto do Trebim.", "comer": "O Burgo (Vitela assada).", "dormir": "Palácio da Lousã ou HI Hostel.", "equipamento": "Temperatura desce na serra. Forro térmico acessível na top-case."},
     "Dia 3 - O Coração (e Foz d'Égua)": {"km": "96 km", "tempo": "3h 00m", "pontos": "Lousã » Góis » Piódão » Foz d'Égua » Piódão", "vistas": "Aldeia do Piódão; Pontes de xisto e ribeiras em Foz d'Égua; Regresso à base no Piódão.", "comer": "O Fontinha (Cabrito assado).", "dormir": "Inatel Piódão ou Casa da Padaria.", "equipamento": "Vales cerrados. Pinlock obrigatório e buff de pescoço contra frio."},
-    "Dia 4 - Cascatas e Património": {"km": "140 km", "tempo": "2h 45m", "pontos": "Piódão » Fraga da Pena » Batalha", "vistas": "Cascata da Fraga da Pena; Mosteiro da Batalha.", "comer": "Tasca do Xico ou Burro Velho.", "dormir": "Hotel Casa do Outeiro.", "equipamento": "Manhã fria na serra, tarde quente no litoral. Sistema de camadas ideal."},
+    "Dia 4 - Cascatas e Dornes": {"km": "170 km", "tempo": "3h 15m", "pontos": "Piódão » Fraga da Pena » Dornes » Batalha", "vistas": "Cascata da Fraga da Pena; Península e torre templária de Dornes; Mosteiro da Batalha.", "comer": "Tasca do Xico ou Burro Velho.", "dormir": "Hotel Casa do Outeiro.", "equipamento": "Manhã fria na serra, tarde quente no litoral. Sistema de camadas ideal."},
     "Dia 5 - A Costa Oeste": {"km": "180 km", "tempo": "3h 15m", "pontos": "Batalha » Óbidos » Peniche » Sta Cruz » Ericeira » Cascais", "vistas": "Muralhas de Óbidos; Cabo Carvoeiro; Condução costeira N247.", "comer": "Jamon Jamon (Óbidos) ou marisqueiras.", "dormir": "Chegada a Casa.", "equipamento": "Fato bem ventilado mas com proteção para o vento da costa."}
 }
 
